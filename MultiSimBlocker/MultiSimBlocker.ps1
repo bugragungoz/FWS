@@ -140,8 +140,27 @@ function Backup-FirewallRules {
         $existingRules = Get-NetFirewallRule | Where-Object { $_.DisplayName -like "$($script:Config.RulePrefix)*" }
 
         if ($existingRules) {
-            $backupData = $existingRules | ConvertTo-Json -Depth 10
-            $backupData | Out-File -FilePath $script:Config.BackupFile -Encoding UTF8
+            $backupRules = foreach ($rule in @($existingRules)) {
+                $programPath = $null
+                try {
+                    $appFilter = Get-NetFirewallApplicationFilter -AssociatedNetFirewallRule $rule -ErrorAction Stop
+                    $programPath = $appFilter.Program
+                }
+                catch {
+                    $programPath = $null
+                }
+
+                [pscustomobject]@{
+                    DisplayName = $rule.DisplayName
+                    Direction   = $rule.Direction
+                    Action      = $rule.Action
+                    Enabled     = $rule.Enabled
+                    Group       = $rule.Group
+                    Program     = $programPath
+                }
+            }
+
+            $backupRules | ConvertTo-Json -Depth 5 | Out-File -FilePath $script:Config.BackupFile -Encoding UTF8
 
             Write-Host "  [OK] Backed up $($existingRules.Count) existing rules to:" -ForegroundColor Green
             Write-Host "       $($script:Config.BackupFile)" -ForegroundColor Gray
@@ -345,9 +364,15 @@ function Invoke-RollbackMode {
 
         foreach ($rule in $rulesToRestore) {
             try {
-                $params = @{ DisplayName = $rule.DisplayName; Direction = $rule.Direction; Action = $rule.Action; Enabled = $rule.Enabled }
-                $filter = Get-NetFirewallApplicationFilter -AssociatedNetFirewallRule $rule -ErrorAction SilentlyContinue
-                if ($filter -and $filter.Program) { $params['Program'] = $filter.Program }
+                $params = @{
+                    DisplayName = $rule.DisplayName
+                    Direction   = $rule.Direction
+                    Action      = $(if ($rule.Action) { $rule.Action } else { 'Block' })
+                    Enabled     = $(if ($null -ne $rule.Enabled) { $rule.Enabled } else { 'True' })
+                }
+                if ($rule.Group) { $params['Group'] = $rule.Group }
+                if ($rule.Program) { $params['Program'] = $rule.Program }
+
                 New-NetFirewallRule @params -ErrorAction Stop | Out-Null
             }
             catch { Write-Log "Failed to restore rule: $_" -Level WARNING }
