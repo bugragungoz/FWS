@@ -525,8 +525,7 @@ function Process-CadenceDirectories {
     Write-Host "  [INFO] Found $($exes.Count) executable(s) to process" -ForegroundColor Cyan
 
     $processedCount = 0
-    $fileArray = @($files)
-    if (-not $fileArray -and $exes) { $fileArray = @($exes) }
+    $fileArray = @($exes)
     for ($i = 0; $i -lt $fileArray.Count; $i++) {
         $file = $fileArray[$i]
         $percentage = [math]::Round((($i + 1) / $fileArray.Count) * 100)

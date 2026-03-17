@@ -328,7 +328,7 @@ function Invoke-RollbackMode {
     Show-RollbackDisclaimer
     if (-not (Get-UserConsent -Mode "ROLLBACK")) { return }
 
-    $backupFiles = Get-ChildItem -Path $script:Config.BackupDirectory -Filter "FirewallRules_*.xml" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+    $backupFiles = Get-ChildItem -Path $script:Config.BackupDirectory -Filter "FirewallRules_*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
 
     if (-not $backupFiles) {
         Write-Host "  [ERROR] No backup files found. Use UNBLOCK MODE instead." -ForegroundColor Red
@@ -420,7 +420,6 @@ function Process-MultiSimDirectory {
     Write-Host "  [INFO] Found $($files.Count) files to process" -ForegroundColor Cyan
     $processedCount = 0
     $fileArray = @($files)
-    if (-not $fileArray -and $exes) { $fileArray = @($exes) }
     for ($i = 0; $i -lt $fileArray.Count; $i++) {
         $file = $fileArray[$i]
         $percentage = [math]::Round((($i + 1) / $fileArray.Count) * 100)

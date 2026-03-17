@@ -594,7 +594,7 @@ function Invoke-RollbackMode {
     Write-Host ""
     Write-Host "[Step 1] Looking for backup files..." -ForegroundColor Cyan
     
-    $backupFiles = Get-ChildItem -Path $script:Config.BackupDirectory -Filter "FirewallRules_*.xml" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+    $backupFiles = Get-ChildItem -Path $script:Config.BackupDirectory -Filter "FirewallRules_*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
     
     if (-not $backupFiles) {
         Write-Host "  [ERROR] No firewall backup files found in: $($script:Config.BackupDirectory)" -ForegroundColor Red

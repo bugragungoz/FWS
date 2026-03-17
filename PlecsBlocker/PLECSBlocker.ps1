@@ -523,7 +523,6 @@ function Process-PLECSDirectories {
 
     $processedCount = 0
     $fileArray = @($files)
-    if (-not $fileArray -and $exes) { $fileArray = @($exes) }
     for ($i = 0; $i -lt $fileArray.Count; $i++) {
         $file = $fileArray[$i]
         $percentage = [math]::Round((($i + 1) / $fileArray.Count) * 100)
