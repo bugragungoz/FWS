@@ -137,7 +137,7 @@ function Test-Prerequisites {
     return $true
 }
 
-function Prompt-SystemRestorePoint {
+function Request-SystemRestorePoint {
     Write-Host ""
     Write-Host "[IMPORTANT] System Backup Recommendation" -ForegroundColor Yellow
     Write-Host ""
@@ -727,7 +727,7 @@ function Invoke-RollbackMode {
     Write-Host ""
 }
 
-function Create-FirewallRule {
+function New-FirewallBlockRule {
     param(
         [string]$DisplayName,
         [string]$FilePath,
@@ -779,7 +779,7 @@ function Get-MatlabFiles {
     }
 }
 
-function Process-MatlabDirectory {
+function Invoke-ProcessDirectory {
     param([string]$Path)
     
     Write-Host ""
@@ -810,8 +810,8 @@ function Process-MatlabDirectory {
             
             $displayName = "$($file.BaseName) - $($file.Extension)"
             
-            if (Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
-                Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
+            if (New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
+                New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
                 $processedCount++
                 
                 if ($script:Config.DryRun) {
@@ -834,7 +834,7 @@ function Process-MatlabDirectory {
     return $processedCount
 }
 
-function Process-SystemLocations {
+function Invoke-ScanSystemLocations {
     Write-Host ""
     Write-Host "[Step 4] Scanning system locations..." -ForegroundColor Cyan
     
@@ -861,7 +861,7 @@ function Process-SystemLocations {
     
     foreach ($location in $locations) {
         if (Test-Path $location) {
-            $count = Process-MatlabDirectory -Path $location
+            $count = Invoke-ProcessDirectory -Path $location
             $totalProcessed += $count
         }
         else {
@@ -880,7 +880,7 @@ function Process-SystemLocations {
             $customPath = Read-Host
             
             if (Test-Path $customPath) {
-                $count = Process-MatlabDirectory -Path $customPath
+                $count = Invoke-ProcessDirectory -Path $customPath
                 $totalProcessed += $count
             }
             else {
@@ -892,7 +892,7 @@ function Process-SystemLocations {
     return $totalProcessed
 }
 
-function Process-SpecificLocations {
+function Invoke-ScanSpecificLocations {
     Write-Host ""
     Write-Host "[Step 5] Scanning product-specific locations..." -ForegroundColor Cyan
     
@@ -913,7 +913,7 @@ function Process-SpecificLocations {
     
     foreach ($path in $specificPaths) {
         if (Test-Path $path) {
-            $count = Process-MatlabDirectory -Path $path
+            $count = Invoke-ProcessDirectory -Path $path
             $totalProcessed += $count
         }
     }
@@ -1111,7 +1111,7 @@ function Block-MatlabIPRanges {
     }
 }
 
-function Check-MatlabServices {
+function Get-MatlabServices {
     Write-Host ""
     Write-Host "[Step 8] Detecting MATLAB services..." -ForegroundColor Cyan
     
@@ -1219,7 +1219,7 @@ function Check-MatlabServices {
     }
 }
 
-function Generate-Report {
+function New-ExecutionReport {
     Write-Host ""
     Write-Host "[Step 9] Generating execution report..." -ForegroundColor Cyan
     
@@ -1298,7 +1298,7 @@ try {
                 break
             }
             
-            if (-not (Prompt-SystemRestorePoint)) {
+            if (-not (Request-SystemRestorePoint)) {
                 break
             }
             
@@ -1310,12 +1310,12 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
-            Process-SpecificLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
+            Invoke-ScanSpecificLocations | Out-Null
             Block-MatlabDomains | Out-Null
             Block-MatlabIPRanges | Out-Null
-            Check-MatlabServices | Out-Null
-            Generate-Report
+            Get-MatlabServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green
@@ -1333,12 +1333,12 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
-            Process-SpecificLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
+            Invoke-ScanSpecificLocations | Out-Null
             Block-MatlabDomains | Out-Null
             Block-MatlabIPRanges | Out-Null
-            Check-MatlabServices | Out-Null
-            Generate-Report
+            Get-MatlabServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green

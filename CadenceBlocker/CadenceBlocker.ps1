@@ -120,7 +120,7 @@ function Test-Prerequisites {
     return $true
 }
 
-function Prompt-SystemRestorePoint {
+function Request-SystemRestorePoint {
     $response = Read-Host "  Create system restore point first? (y/n, default n)"
     if ($response -match '^(yes|y)$') {
         Write-Host "  Create restore point via: Win + R -> sysdm.cpl -> System Protection -> Create" -ForegroundColor Gray
@@ -484,7 +484,7 @@ function Invoke-RollbackMode {
     Write-Host ""
 }
 
-function Process-CadenceDirectories {
+function Invoke-ScanCadenceDirectories {
     Write-Host ""
     Write-Host "[Step 4] Scanning for Cadence/OrCAD/PSpice directories..." -ForegroundColor Cyan
 
@@ -556,7 +556,7 @@ function Process-CadenceDirectories {
     return $processedCount
 }
 
-function Generate-Report {
+function New-ExecutionReport {
     Write-Host ""
     Write-Host "[Step 5] Generating report..." -ForegroundColor Cyan
 
@@ -608,12 +608,12 @@ try {
             $script:Config.DryRun = $false
             Show-BlockModeDisclaimer
             if (-not (Get-UserConsent -Mode "BLOCK")) { break }
-            if (-not (Prompt-SystemRestorePoint)) { break }
+            if (-not (Request-SystemRestorePoint)) { break }
             if (-not (Backup-FirewallRules)) { break }
             if (-not (Remove-DuplicateRules)) { break }
 
-            Process-CadenceDirectories | Out-Null
-            Generate-Report
+            Invoke-ScanCadenceDirectories | Out-Null
+            New-ExecutionReport
 
             Write-Host ""
             Write-Host "  Cadence WAN blocking applied. Localhost:5280 preserved for license." -ForegroundColor Green
@@ -624,8 +624,8 @@ try {
             Show-DryRunDisclaimer
             if (-not (Get-UserConsent -Mode "DRY RUN")) { break }
 
-            Process-CadenceDirectories | Out-Null
-            Generate-Report
+            Invoke-ScanCadenceDirectories | Out-Null
+            New-ExecutionReport
 
             Write-Host ""
             Write-Host "  DRY RUN complete. No changes were made." -ForegroundColor Green

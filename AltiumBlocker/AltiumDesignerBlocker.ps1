@@ -175,7 +175,7 @@ function Test-Prerequisites {
     return $true
 }
 
-function Prompt-SystemRestorePoint {
+function Request-SystemRestorePoint {
     Write-Host ""
     Write-Host "[IMPORTANT] System Backup Recommendation" -ForegroundColor Yellow
     Write-Host ""
@@ -743,7 +743,7 @@ function Test-ShouldBlockFile {
     return $true # Block
 }
 
-function Create-FirewallRule {
+function New-FirewallBlockRule {
     param(
         [string]$DisplayName,
         [string]$FilePath,
@@ -795,7 +795,7 @@ function Get-AltiumFiles {
     }
 }
 
-function Process-AltiumDirectory {
+function Invoke-ProcessDirectory {
     param([string]$Path)
     
     Write-Host ""
@@ -831,8 +831,8 @@ function Process-AltiumDirectory {
                 
                 $displayName = "$($file.BaseName) - $($file.Extension)"
                 
-                if (Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
-                    Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
+                if (New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
+                    New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
                     $blockedCount++
                     
                     if ($script:Config.DryRun) {
@@ -869,7 +869,7 @@ function Process-AltiumDirectory {
     return $blockedCount
 }
 
-function Process-SystemLocations {
+function Invoke-ScanSystemLocations {
     Write-Host ""
     Write-Host "[Step 4] Scanning system locations with SELECTIVE blocking..." -ForegroundColor Cyan
     Write-Host "  [INFO] Component Search functionality will be PRESERVED" -ForegroundColor Green
@@ -912,7 +912,7 @@ function Process-SystemLocations {
             $customPath = Read-Host
             
             if (Test-Path $customPath) {
-                $count = Process-AltiumDirectory -Path $customPath
+                $count = Invoke-ProcessDirectory -Path $customPath
                 $totalProcessed += $count
             }
             else {
@@ -923,7 +923,7 @@ function Process-SystemLocations {
     else {
         foreach ($location in $locations) {
             if (Test-Path $location) {
-                $count = Process-AltiumDirectory -Path $location
+                $count = Invoke-ProcessDirectory -Path $location
                 $totalProcessed += $count
             }
             else {
@@ -1022,7 +1022,7 @@ function Block-AltiumDomains {
     }
 }
 
-function Check-AltiumServices {
+function Get-AltiumServices {
     Write-Host ""
     Write-Host "[Step 6] Detecting Altium services..." -ForegroundColor Cyan
     
@@ -1130,7 +1130,7 @@ function Check-AltiumServices {
     }
 }
 
-function Generate-Report {
+function New-ExecutionReport {
     Write-Host ""
     Write-Host "[Step 7] Generating execution report..." -ForegroundColor Cyan
     
@@ -1215,7 +1215,7 @@ try {
                 break
             }
             
-            if (-not (Prompt-SystemRestorePoint)) {
+            if (-not (Request-SystemRestorePoint)) {
                 break
             }
             
@@ -1227,10 +1227,10 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-AltiumDomains | Out-Null
-            Check-AltiumServices | Out-Null
-            Generate-Report
+            Get-AltiumServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green
@@ -1252,10 +1252,10 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-AltiumDomains | Out-Null
-            Check-AltiumServices | Out-Null
-            Generate-Report
+            Get-AltiumServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green

@@ -119,7 +119,7 @@ function Test-Prerequisites {
     return $true
 }
 
-function Prompt-SystemRestorePoint {
+function Request-SystemRestorePoint {
     $response = Read-Host "  Create system restore point first? (y/n, default n)"
     if ($response -match '^(yes|y)$') {
         Write-Host "  Create restore point via: Win + R -> sysdm.cpl -> System Protection -> Create" -ForegroundColor Gray
@@ -369,7 +369,7 @@ function Invoke-RollbackMode {
     Write-Host ""
 }
 
-function Create-FirewallRule {
+function New-FirewallBlockRule {
     param([string]$DisplayName, [string]$FilePath, [string]$Direction)
 
     if ($script:Config.DryRun) {
@@ -405,7 +405,7 @@ function Get-MultiSimFiles {
     }
 }
 
-function Process-MultiSimDirectory {
+function Invoke-ProcessDirectory {
     param([string]$Path)
 
     Write-Host ""
@@ -430,8 +430,8 @@ function Process-MultiSimDirectory {
             $script:BlockedFilesHashSet[$file.FullName] = $true
             $displayName = "$($file.BaseName) - $($file.Extension)"
 
-            if (Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
-                Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
+            if (New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
+                New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
                 $processedCount++
                 $script:Statistics.BlockedFilesList += $file.FullName
 
@@ -451,7 +451,7 @@ function Process-MultiSimDirectory {
     return $processedCount
 }
 
-function Process-SystemLocations {
+function Invoke-ScanSystemLocations {
     Write-Host ""
     Write-Host "[Step 4] Scanning system locations..." -ForegroundColor Cyan
 
@@ -487,7 +487,7 @@ function Process-SystemLocations {
     $totalProcessed = 0
     foreach ($location in $locations | Select-Object -Unique) {
         if (Test-Path $location) {
-            $totalProcessed += Process-MultiSimDirectory -Path $location
+            $totalProcessed += Invoke-ProcessDirectory -Path $location
         }
     }
 
@@ -501,7 +501,7 @@ function Process-SystemLocations {
             Write-Host "  Enter path: " -ForegroundColor Cyan -NoNewline
             $customPath = Read-Host
             if (Test-Path $customPath) {
-                $totalProcessed = Process-MultiSimDirectory -Path $customPath
+                $totalProcessed = Invoke-ProcessDirectory -Path $customPath
             }
             else {
                 Write-Host "  [ERROR] Invalid path" -ForegroundColor Red
@@ -634,7 +634,7 @@ function Block-MultiSimIPRanges {
     }
 }
 
-function Check-MultiSimServices {
+function Get-MultiSimServices {
     Write-Host ""
     Write-Host "[Step 7] Detecting NI services..." -ForegroundColor Cyan
 
@@ -659,7 +659,7 @@ function Check-MultiSimServices {
     }
 }
 
-function Generate-Report {
+function New-ExecutionReport {
     Write-Host ""
     Write-Host "[Step 8] Generating report..." -ForegroundColor Cyan
 
@@ -711,15 +711,15 @@ try {
             $script:Config.DryRun = $false
             Show-BlockModeDisclaimer
             if (-not (Get-UserConsent -Mode "BLOCK")) { break }
-            if (-not (Prompt-SystemRestorePoint)) { break }
+            if (-not (Request-SystemRestorePoint)) { break }
             if (-not (Backup-FirewallRules)) { break }
             if (-not (Remove-DuplicateRules)) { break }
 
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-MultiSimDomains | Out-Null
             Block-MultiSimIPRanges | Out-Null
-            Check-MultiSimServices | Out-Null
-            Generate-Report
+            Get-MultiSimServices | Out-Null
+            New-ExecutionReport
 
             Write-Host ""
             Write-Host "  MultiSim internet access has been blocked successfully." -ForegroundColor Green
@@ -730,11 +730,11 @@ try {
             Show-DryRunDisclaimer
             if (-not (Get-UserConsent -Mode "DRY RUN")) { break }
 
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-MultiSimDomains | Out-Null
             Block-MultiSimIPRanges | Out-Null
-            Check-MultiSimServices | Out-Null
-            Generate-Report
+            Get-MultiSimServices | Out-Null
+            New-ExecutionReport
 
             Write-Host ""
             Write-Host "  DRY RUN complete. No changes were made." -ForegroundColor Green

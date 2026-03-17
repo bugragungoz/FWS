@@ -149,7 +149,7 @@ function Test-Prerequisites {
     return $true
 }
 
-function Prompt-SystemRestorePoint {
+function Request-SystemRestorePoint {
     Write-Host ""
     Write-Host "[IMPORTANT] System Backup Recommendation" -ForegroundColor Yellow
     Write-Host ""
@@ -706,7 +706,7 @@ function Test-ShouldBlockFile {
     return $true # Block everything
 }
 
-function Create-FirewallRule {
+function New-FirewallBlockRule {
     param(
         [string]$DisplayName,
         [string]$FilePath,
@@ -758,7 +758,7 @@ function Get-SketchUpFiles {
     }
 }
 
-function Process-SketchUpDirectory {
+function Invoke-ProcessDirectory {
     param([string]$Path)
     
     Write-Host ""
@@ -790,8 +790,8 @@ function Process-SketchUpDirectory {
             
             $displayName = "$($file.BaseName) - $($file.Extension)"
             
-            if (Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
-                Create-FirewallRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
+            if (New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Outbound) {
+                New-FirewallBlockRule -DisplayName $displayName -FilePath $file.FullName -Direction Inbound | Out-Null
                 $blockedCount++
                 
                 if ($script:Config.DryRun) {
@@ -816,7 +816,7 @@ function Process-SketchUpDirectory {
     return $blockedCount
 }
 
-function Process-SystemLocations {
+function Invoke-ScanSystemLocations {
     Write-Host ""
     Write-Host "[Step 4] Scanning system locations with FULL blocking..." -ForegroundColor Cyan
     Write-Host "  [INFO] ALL SketchUp files will be BLOCKED from internet access" -ForegroundColor Red
@@ -859,7 +859,7 @@ function Process-SystemLocations {
             $customPath = Read-Host
             
             if (Test-Path $customPath) {
-                $count = Process-SketchUpDirectory -Path $customPath
+                $count = Invoke-ProcessDirectory -Path $customPath
                 $totalProcessed += $count
             }
             else {
@@ -870,7 +870,7 @@ function Process-SystemLocations {
     else {
         foreach ($location in $locations) {
             if (Test-Path $location) {
-                $count = Process-SketchUpDirectory -Path $location
+                $count = Invoke-ProcessDirectory -Path $location
                 $totalProcessed += $count
             }
             else {
@@ -1025,7 +1025,7 @@ function Block-SketchUpDomains {
     }
 }
 
-function Check-SketchUpServices {
+function Get-SketchUpServices {
     Write-Host ""
     Write-Host "[Step 6] Detecting SketchUp services..." -ForegroundColor Cyan
     
@@ -1133,7 +1133,7 @@ function Check-SketchUpServices {
     }
 }
 
-function Generate-Report {
+function New-ExecutionReport {
     Write-Host ""
     Write-Host "[Step 7] Generating execution report..." -ForegroundColor Cyan
     
@@ -1221,7 +1221,7 @@ try {
                 break
             }
             
-            if (-not (Prompt-SystemRestorePoint)) {
+            if (-not (Request-SystemRestorePoint)) {
                 break
             }
             
@@ -1233,10 +1233,10 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-SketchUpDomains | Out-Null
-            Check-SketchUpServices | Out-Null
-            Generate-Report
+            Get-SketchUpServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green
@@ -1259,10 +1259,10 @@ try {
                 break
             }
             
-            Process-SystemLocations | Out-Null
+            Invoke-ScanSystemLocations | Out-Null
             Block-SketchUpDomains | Out-Null
-            Check-SketchUpServices | Out-Null
-            Generate-Report
+            Get-SketchUpServices | Out-Null
+            New-ExecutionReport
             
             Write-Host ""
             Write-Host "================================================================================" -ForegroundColor Green

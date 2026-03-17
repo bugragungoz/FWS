@@ -55,7 +55,7 @@ function Write-Log {
 }
 
 # Creates a Windows Firewall rule for a specific file
-function Create-FirewallRule {
+function New-FirewallBlockRule {
     param (
         [Parameter(Mandatory=$true)]
         [string]$FilePath,
@@ -255,17 +255,17 @@ function Block-ApplicationFiles {
         Write-Host "Processing: $($file.FullName)" -ForegroundColor $processColor
         
         $inboundRuleName = "$($baseRuleName) (Inbound)"
-        $inboundSuccess = Create-FirewallRule -FilePath $file.FullName -DisplayName $inboundRuleName -Direction "Inbound"
+        $inboundSuccess = New-FirewallBlockRule -FilePath $file.FullName -DisplayName $inboundRuleName -Direction "Inbound"
         
         $outboundRuleName = "$($baseRuleName) (Outbound)"
-        $outboundSuccess = Create-FirewallRule -FilePath $file.FullName -DisplayName $outboundRuleName -Direction "Outbound"
+        $outboundSuccess = New-FirewallBlockRule -FilePath $file.FullName -DisplayName $outboundRuleName -Direction "Outbound"
         
         if ($inboundSuccess -and $outboundSuccess) {
             $successRuleCount++
         } else {
             $errorFileCount++
             Write-Warning "  -> Failed to create one or both rules for: $($file.Name)"
-            # Specific errors logged within Create-FirewallRule
+            # Specific errors logged within New-FirewallBlockRule
         }
     }
     
@@ -290,7 +290,7 @@ function Block-ApplicationFiles {
 }
 
 # Function to manage (list and remove) firewall rules created by this script
-function Manage-FirewallRules {
+function Invoke-ManageFirewallRules {
     Write-Host "`n--- Manage Firewall Rules ---" -ForegroundColor $titleColor
     Write-Log -Message "Entered rule management function."
     
@@ -408,17 +408,14 @@ try {
     Write-Host "---------------------------------------------------------------" -ForegroundColor $infoColor
 
         # --- System Restore Point prompt ---
-    $restorePointCreated = $false
     $askCreateRestorePoint = Read-Host -Prompt "Do you want to ATTEMPT creating a System Restore Point before proceeding? (Recommended: Y/N)"
     if ($askCreateRestorePoint -match '^y') {
         Write-Host "Attempting to create System Restore Point... (this may take a moment)" -ForegroundColor $infoColor
         Write-Log -Message "User requested System Restore Point creation attempt."
         try {
-            # Attempt Checkpoint-Computer; VSS will start if required.
             Checkpoint-Computer -Description "Before AppBlocker script execution $(Get-Date)" -ErrorAction Stop
             Write-Host "System Restore Point created successfully." -ForegroundColor $successColor
             Write-Log -Message "System Restore Point created successfully."
-            $restorePointCreated = $true
         } catch {
             # Capture failure and provide guidance.
             $errMsg = "Failed to create System Restore Point. Error: $($_.Exception.Message). Please ensure System Restore is enabled and functional for your system drive (VSS service might be disabled or unable to start)."
@@ -499,7 +496,7 @@ try {
                 Block-ApplicationFiles -ApplicationPath $inputAppPath -ApplicationName $inputAppName -FileExtensions $inputFileExtensions -ExcludedKeywords $inputExcludedKeywords -ExcludedFiles $inputExcludedFiles
             }
             "2" {
-                Manage-FirewallRules
+                Invoke-ManageFirewallRules
             }
             "3" {
                 Write-Host "Opening Windows Firewall with Advanced Security (wf.msc)..." -ForegroundColor $infoColor
