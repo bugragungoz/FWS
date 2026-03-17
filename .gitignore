@@ -1,0 +1,11 @@
+# Generated outputs
+*_Logs/
+*_Backups/
+*.log
+*.txt
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
